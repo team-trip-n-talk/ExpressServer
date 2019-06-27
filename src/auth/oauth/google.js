@@ -1,12 +1,23 @@
 'use strict';
 
+/**
+ * Google Oauth Module
+ * @module src/auth/oauth/google
+ */
+
 const superagent = require('superagent');
 const Users = require('../users-model.js');
+
+/**
+ * @method authorize
+ * @param {object} req - request
+ * @desc Handles Google oauth request and execution
+ * @return {object} authenticated user from google with token
+ */
 
 const authorize = (req) => {
 
   let code = req.query.code;
-  console.log('(1) CODE:', code);
 
   return superagent.post('https://www.googleapis.com/oauth2/v4/token')
     .type('form')
@@ -19,7 +30,6 @@ const authorize = (req) => {
     })
     .then( response => {
       let access_token = response.body.access_token;
-      console.log('(2) ACCESS TOKEN:', access_token);
       return access_token;
     })
     .then(token => {
@@ -28,21 +38,22 @@ const authorize = (req) => {
         .then( response => {
           let user = response.body;
           user.access_token = token;
-          console.log('(3) GOOGLEUSER', user);
           return user;
         });
     })
     .then(oauthUser => {
-      console.log('(4) CREATE ACCOUNT');
       return Users.createFromOauth(oauthUser);
     })
     .then(actualRealUser => {
-      console.log('(5) ALMOST ...', actualRealUser);
       return actualRealUser.generateToken();
     })
     .catch(error => error);
-
-
 };
+
+/**
+ * Export object with oauth authorize function attached
+ * @type {Object}
+ * @desc allows use of Google Oauth
+ */
 
 module.exports = {authorize};
